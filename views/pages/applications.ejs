@@ -1,0 +1,263 @@
+<%- include('../partials/header', { title: 'Applications' }); %>
+
+<div class="container mt-5">
+    <h1 class="text-center"><%= role === 'user' ? 'My Applications' : 'Job Applications' %></h1>
+
+    <!-- Prostor za notifikacije -->
+    <div id="success-alert" class="alert alert-success position-fixed w-50 text-center" role="alert" style="top: 10px; left: 50%; transform: translateX(-50%); z-index: 1050; display: none;">
+        Action completed successfully!
+    </div>
+
+    <% if (role === 'user') { %>
+        <!-- Sekcija za korisnike -->
+        <% if (applications.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Job Title</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Application Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% applications.forEach((app, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= app.title %></td>
+                                <td><%= app.description %></td>
+                                <td><%= app.status %></td>
+                                <td><%= new Date(app.created_at).toLocaleDateString() %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-center">You have not applied for any jobs yet.</p>
+        <% } %>
+    <% } else { %>
+        <!-- Sekcija za administratore -->
+        <% if (applications.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Candidate Name</th>
+                            <th>Email</th>
+                            <th>Job Title</th>
+                            <th>Experience</th>
+                            <th>Education</th>
+                            <th>CV</th>
+                            <th>Cover Letter</th>
+                            <th>Certificates</th>
+                            <th>Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% applications.forEach((app, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td><%= app.first_name %> <%= app.last_name %></td>
+                                <td class="email-cell"><%= app.email %></td>
+                                <td><%= app.title %></td>
+                                <td><%= app.experience %></td>
+                                <td><%= app.education %></td>
+                                <td>
+                                    <a href="/<%= app.cv %>" target="_blank">View</a> | 
+                                    <a href="/<%= app.cv %>" download>Download</a>
+                                </td>
+                                <td>
+                                    <% if (app.cover_letter) { %>
+                                        <p><%= app.cover_letter %></p>
+                                    <% } else { %>
+                                        N/A
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (app.certificates) { %>
+                                        <a href="/uploads/<%= app.certificates %>" target="_blank">View</a> | 
+                                        <a href="/uploads/<%= app.certificates %>" download>Download</a>
+                                    <% } else { %>
+                                        N/A
+                                    <% } %>
+                                </td>
+                                <td><%= app.score || 'N/A' %></td>
+                                <td>
+                                    <% if (app.status !== 'accepted' && app.status !== 'rejected') { %>
+                                        <!-- Rankiranje kandidata -->
+                                        <form class="d-inline rank-form mb-3">
+                                            <input type="hidden" name="applicationId" value="<%= app.application_id %>">
+                                            <input type="number" name="score" min="1" max="10" placeholder="Score" required class="form-control mb-2">
+                                            <button type="button" class="btn btn-primary btn-sm rank-btn" data-job-id="<%= app.job_id %>">Rank</button>
+                                        </form>
+                                        <!-- Dodavanje komentara -->
+                                        <form class="d-inline comment-form mt-3">
+                                            <input type="hidden" name="applicationId" value="<%= app.application_id %>">
+                                            <textarea name="comment" placeholder="Add comment" required class="form-control mb-2"></textarea>
+                                            <button type="button" class="btn btn-secondary btn-sm comment-btn" data-job-id="<%= app.job_id %>">Comment</button>
+                                        </form>
+                                    <% } else { %>
+                                        <%= app.status %>
+                                    <% } %>
+                                </td>
+                            </tr>                        
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-center">No applications for this job yet.</p>
+        <% } %>
+    <% } %>
+</div>
+
+<%- include('../partials/footer'); %>
+
+<!-- CSS za razmake i automatsko povećanje visine textarea -->
+<style>
+    textarea {
+        width: 100%;
+        min-height: 50px;
+        resize: none;
+        overflow-y: hidden;
+    }
+
+    /* Razmak između polja i dugmadi */
+    .mb-2 {
+        margin-bottom: 10px;
+    }
+
+    .mb-3 {
+        margin-bottom: 15px;
+    }
+
+    .mt-3 {
+        margin-top: 15px;
+    }
+
+    /* Stil za notifikaciju */
+    #success-alert {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        display: none;
+        text-align: center;
+        width: 50%;
+    }
+
+    /* Dodatni razmaci za bolju preglednost */
+    .rank-form input,
+    .rank-form button,
+    .comment-form textarea,
+    .comment-form button {
+        margin-bottom: 10px;
+    }
+
+    /* Stil za prelamanje riječi u tabeli */
+    td {
+        word-wrap: break-word;
+        word-break: keep-all;
+        max-width: 150px; /* Povećano za oko 25 karaktera */
+        white-space: normal;
+        hyphens: auto;
+    }
+
+    .text-center {
+        padding-top: 20px;
+    }
+    
+    .email-cell {
+    max-width: 200px; /* Povećajte širinu za kolonu emaila ako je potrebno */
+    overflow: auto;
+    }
+</style>
+
+<!-- JavaScript za funkcionalnosti -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Rank button functionality
+        document.querySelectorAll('.rank-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const form = e.target.closest('.rank-form');
+                const jobId = e.target.dataset.jobId;
+                const applicationId = form.querySelector('input[name="applicationId"]').value;
+                const score = form.querySelector('input[name="score"]').value;
+
+                try {
+                    const res = await fetch(`/api/applications/job/${jobId}/rank`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ applicationId, score }),
+                    });
+
+                    if (res.ok) {
+                        showNotification('Candidate ranked successfully!', 'success');
+                    } else {
+                        showNotification('Error ranking candidate.', 'danger');
+                    }
+                } catch (err) {
+                    showNotification('Error ranking candidate.', 'danger');
+                }
+            });
+        });
+
+        // Comment button functionality
+        document.querySelectorAll('.comment-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const form = e.target.closest('.comment-form');
+                const jobId = e.target.dataset.jobId;
+                const applicationId = form.querySelector('input[name="applicationId"]').value;
+                const comment = form.querySelector('textarea[name="comment"]').value;
+
+                try {
+                    const res = await fetch(`/api/applications/job/${jobId}/comment`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ applicationId, comment }),
+                    });
+
+                    if (res.ok) {
+                        showNotification('Comment added successfully!', 'success');
+                        form.querySelector('textarea[name="comment"]').value = ''; // Clear textarea
+                    } else {
+                        showNotification('Error adding comment.', 'danger');
+                    }
+                } catch (err) {
+                    showNotification('Error adding comment.', 'danger');
+                }
+            });
+        });
+
+        // Notification helper
+        function showNotification(message, type) {
+    const notification = document.getElementById('success-alert');
+
+    // Resetovanje klasa i stilova prije prikaza
+    notification.className = `alert alert-${type} position-fixed w-50 text-center fade`;
+    notification.textContent = message;
+    notification.style.display = 'block';
+    notification.style.opacity = '1';
+
+    // Fade-in efekt
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+
+    // Fade-out efekt nakon 3 sekunde
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.style.display = 'none';
+            notification.classList.remove('show');
+        }, 500);
+    }, 3000);
+}
+    });
+</script>

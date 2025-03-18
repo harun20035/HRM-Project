@@ -1,0 +1,326 @@
+<%- include('../partials/header', { title: 'Manage Interviews' }); %>
+
+<style>
+    /* Stil za prelamanje riječi u tabeli za određene kolone */
+    .wrap-cell {
+        word-wrap: break-word;
+        word-break: break-word;
+        max-width: 250px; /* Možete prilagoditi širinu po potrebi */
+        white-space: normal;
+        hyphens: auto;
+    }
+
+    /* Dodatni stilovi za tabelu i dugmad */
+    .table td, .table th {
+        vertical-align: top;
+        padding: 10px;
+    }
+
+    .btn-sm {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+
+    /* Responzivnost tabele za manje ekrane */
+    @media (max-width: 600px) {
+        .table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+    }
+</style>
+
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Manage Interviews</h1>
+
+    <% if (role === 'user') { %>
+        <% if (interviews.length > 0) { %>
+            <!-- Dodana klasa table-responsive -->
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Job Title</th>
+                            <th>Date & Time</th>
+                            <th>Location</th>
+                            <th>Application Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% interviews.forEach((interview, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td class="wrap-cell"><%= interview.job_title %></td>
+                                <td><%= interview.date_time ? new Date(interview.date_time).toLocaleString() : 'N/A' %></td>
+                                <td><%= interview.location || 'N/A' %></td>
+                                <td><%= interview.application_status.charAt(0).toUpperCase() + interview.application_status.slice(1) %></td>
+                                <td>
+                                    <% if (interview.application_status === 'invited_for_interview' && interview.status === 'pending') { %>
+                                        <button class="btn btn-success btn-sm confirm-btn" data-id="<%= interview.id %>">Confirm</button>
+                                        <button class="btn btn-danger btn-sm decline-btn" data-id="<%= interview.id %>">Decline</button>
+                                    <% } else if (interview.application_status === 'invited_for_interview' && interview.status === 'confirmed') { %>
+                                        <span class="text-success">Confirmed</span>
+                                    <% } else if (interview.application_status === 'invited_for_interview' && interview.status === 'declined') { %>
+                                        <span class="text-danger">Declined</span>
+                                    <% } %>
+                                </td>                                
+                            </tr>
+                        <% }) %>
+                    </tbody>                                
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-center">No interviews scheduled yet.</p>
+        <% } %>
+    <% } else { %>
+        <!-- Sekcija za administratore -->
+        <% if (applications.length > 0) { %>
+            <!-- Dodana klasa table-responsive -->
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Candidate Name</th>
+                            <th>Job Title</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% applications.forEach((app, index) => { %>
+                            <tr>
+                                <td><%= index + 1 %></td>
+                                <td class="wrap-cell"><%= app.candidate_first_name %> <%= app.candidate_last_name %></td>
+                                <td class="wrap-cell"><%= app.job_title %></td>
+                                <td><%= app.status %></td>
+                                <td>
+                                    <form class="schedule-form" data-id="<%= app.application_id %>">
+                                        <div class="mb-3">
+                                            <label for="date-<%= app.application_id %>" class="form-label">Date & Time</label>
+                                            <input type="datetime-local" class="form-control" id="date-<%= app.application_id %>" name="date_time" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="location-<%= app.application_id %>" class="form-label">Location</label>
+                                            <input type="text" class="form-control" id="location-<%= app.application_id %>" name="location" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm">Schedule</button>
+                                        <button type="button" class="btn btn-secondary btn-sm update-status-btn" data-id="<%= app.application_id %>" data-status="reviewed">Mark as Reviewed</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <p class="text-center">No applications to process.</p>
+        <% } %>
+    <% } %>
+</div>
+
+<script>
+    function toggleLoading(show) {
+    if (show) {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.setAttribute('id', 'loadingDiv');
+        loadingDiv.style.position = 'fixed';
+        loadingDiv.style.top = '0';
+        loadingDiv.style.left = '0';
+        loadingDiv.style.width = '100%';
+        loadingDiv.style.height = '100%';
+        loadingDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        loadingDiv.style.display = 'flex';
+        loadingDiv.style.justifyContent = 'center';
+        loadingDiv.style.alignItems = 'center';
+        loadingDiv.style.zIndex = '1000';
+        loadingDiv.innerHTML = `
+            <div style="text-align: center;">
+                <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+                <p style="color: white; font-size: 20px; margin-top: 15px;">Scheduling interview and sending email... Please wait.</p>
+            </div>
+        `;
+        document.body.appendChild(loadingDiv);
+        
+        // Dodavanje stilova za loader
+        const loader = document.createElement('style');
+        loader.innerHTML = `
+            .lds-ellipsis {
+                display: inline-block;
+                position: relative;
+                width: 80px;
+                height: 80px;
+            }
+            .lds-ellipsis div {
+                position: absolute;
+                top: 33px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #fff;
+                animation-timing-function: cubic-bezier(0, 1, 1, 0);
+            }
+            .lds-ellipsis div:nth-child(1) {
+                left: 8px;
+                animation: lds-ellipsis1 0.6s infinite;
+            }
+            .lds-ellipsis div:nth-child(2) {
+                left: 8px;
+                animation: lds-ellipsis2 0.6s infinite;
+            }
+            .lds-ellipsis div:nth-child(3) {
+                left: 32px;
+                animation: lds-ellipsis2 0.6s infinite;
+            }
+            .lds-ellipsis div:nth-child(4) {
+                left: 56px;
+                animation: lds-ellipsis3 0.6s infinite;
+            }
+            @keyframes lds-ellipsis1 {
+                0% {
+                    transform: scale(0);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            @keyframes lds-ellipsis3 {
+                0% {
+                    transform: scale(1);
+                }
+                100% {
+                    transform: scale(0);
+                }
+            }
+            @keyframes lds-ellipsis2 {
+                0% {
+                    transform: translate(0, 0);
+                }
+                100% {
+                    transform: translate(24px, 0);
+                }
+            }
+        `;
+        document.head.appendChild(loader);
+    } else {
+        const loadingDiv = document.getElementById('loadingDiv');
+        if (loadingDiv) {
+            loadingDiv.parentNode.removeChild(loadingDiv);
+        }
+        const styles = document.head.getElementsByTagName('style');
+        if (styles.length > 0) {
+            document.head.removeChild(styles[styles.length - 1]); // Uklanja dodati CSS za loader
+        }
+    }
+}
+
+document.querySelectorAll('.schedule-form').forEach(form => {
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        toggleLoading(true); // Prikazuje loading indikator
+
+        const applicationId = this.dataset.id;
+        const dateTime = this.querySelector('input[name="date_time"]').value;
+        const location = this.querySelector('input[name="location"]').value;
+
+        fetch(`/api/interviews/schedule`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ application_id: applicationId, date_time: dateTime, location })
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                const actionsCell = this.closest('td');
+                actionsCell.innerHTML = `
+                    <div class="text-success">
+                        Interview Scheduled for ${new Date(dateTime).toLocaleString()} at ${location}
+                    </div>
+                `;
+                toggleLoading(false); // Sakriva loading indikator
+            })
+            .catch(err => {
+                console.error(err);
+                toggleLoading(false); // Sakriva loading indikator u slučaju greške
+            });
+    });
+});
+
+    document.querySelectorAll('.update-status-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const applicationId = this.dataset.id;
+            const status = this.dataset.status;
+
+            fetch(`/api/interviews/${applicationId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'reviewed' })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    location.reload(); // Osvježavanje stranice nakon uspješnog ažuriranja
+                })
+                .catch(err => console.error(err));
+        });
+    });
+
+    document.querySelectorAll('.confirm-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const interviewId = this.dataset.id;
+
+            fetch(`/api/interviews/${interviewId}/confirm`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    const row = this.closest('tr');
+                    row.querySelector('td:last-child').innerHTML = '<span class="text-success">Confirmed</span>'; // Zamijeni dugmad sa tekstom
+                })
+                .catch(err => console.error(err));
+        });
+    });
+
+    document.querySelectorAll('.decline-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const interviewId = this.dataset.id;
+
+            fetch(`/api/interviews/${interviewId}/decline`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    const row = this.closest('tr');
+                    row.querySelector('td:last-child').innerHTML = '<span class="text-danger">Declined</span>'; // Zamijeni dugmad sa tekstom
+                })
+                .catch(err => console.error(err));
+        });
+    });
+
+    document.querySelectorAll('.decline-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const interviewId = this.dataset.id;
+
+            fetch(`/api/interviews/${interviewId}/decline`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    this.closest('tr').remove();
+                })
+                .catch(err => console.error(err));
+        });
+    });
+</script>
+
+<%- include('../partials/footer'); %>

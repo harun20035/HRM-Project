@@ -1,0 +1,160 @@
+<%- include('../partials/header', { title: 'Manage Users' }); %>
+
+<style>
+    /* Stil za centriranu notifikaciju */
+    #success-alert {
+        position: fixed;
+        top: 15%; /* Pozicionirano bliže vrhu */
+        left: 50%; /* Centrirano horizontalno */
+        transform: translate(-50%, 0); /* Uklanjanje vertikalnog centriranja */
+        z-index: 9999;
+        display: none;
+        background-color: #007bff;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        font-size: 16px;
+        text-align: center;
+    }
+
+    /* Stil za kartice */
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 30px;
+    }
+    .card {
+        flex: 1 1 calc(33.33% - 1rem); /* Po defaultu 3 kartice u jednom redu */
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .card h5 {
+        font-size: 1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .card p {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .card .actions {
+        margin-top: auto;
+        text-align: center;
+    }
+
+    /* Responzivnost */
+    @media (max-width: 768px) {
+        .card {
+            flex: 1 1 calc(50% - 1rem); /* 2 kartice u jednom redu */
+        }
+    }
+    @media (max-width: 576px) {
+        .card {
+            flex: 1 1 100%; /* Jedna kartica po redu */
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center">Manage Users</h1>
+
+    <% if (userRole === 'super_admin') { %>
+        <div class="role-card">
+            <h4 class="mb-4">Set User Roles</h4>
+
+            <!-- Alert za uspješan update -->
+            <div id="success-alert" role="alert">
+                User role updated successfully!
+            </div>
+
+            <!-- Forma za setovanje uloga -->
+            <form id="setRoleForm">
+                <div class="mb-3">
+                    <label for="user_id" class="form-label">Select User</label>
+                    <select class="form-select" id="user_id" name="user_id" required>
+                        <% users.forEach(user => { %>
+                            <option value="<%= user.user_id %>">
+                                <%= user.first_name %> <%= user.last_name %> (<%= user.email %>) - Current Role: <%= user.role %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="role" class="form-label">Select Role</label>
+                    <select class="form-select" id="role" name="role" required>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Set Role</button>
+            </form>
+        </div>
+    <% } %>
+
+    <h4 class="mt-5">All Users</h4>
+    <div class="card-container">
+        <% users.forEach(user => { %>
+            <div class="card" id="user-card-<%= user.user_id %>">
+                <h5>User ID: <%= user.user_id %></h5>
+                <p>Name: <%= user.first_name %> <%= user.last_name %></p>
+                <p>Email: <%= user.email %></p>
+                <p>Role: <%= user.role %></p>
+                <% if (userRole === 'super_admin') { %>
+                    <div class="actions">
+                        <button class="btn btn-danger btn-sm delete-btn" data-user-id="<%= user.user_id %>">Delete</button>
+                    </div>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $('#setRoleForm').on('submit', function (e) {
+        e.preventDefault();
+        const userId = $('#user_id').val();
+        const role = $('#role').val();
+
+        $.ajax({
+            url: '/api/users',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ user_id: userId, role }),
+            success: function () {
+                $('#success-alert').fadeIn().delay(3000).fadeOut();
+            },
+            error: function () {
+                alert('Error updating user role');
+            },
+        });
+    });
+
+    $(document).on('click', '.delete-btn', function () {
+        const userId = $(this).data('user-id');
+
+        // AJAX zahtjev za brisanje korisnika
+        $.ajax({
+            url: `/api/users/${userId}`,
+            method: 'DELETE',
+            success: function () {
+                $(`#user-card-${userId}`).remove(); // Ukloni karticu
+            },
+            error: function () {
+                alert('Error deleting user');
+            },
+        });
+    });
+</script>
+
+<%- include('../partials/footer'); %>

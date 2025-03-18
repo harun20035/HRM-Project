@@ -1,0 +1,81 @@
+<%- include('partials/header', { title: 'Welcome to HRM System' }); %>
+
+<!-- Stilovi -->
+<style>
+    .hero-background {
+        background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/images/background.jpg') no-repeat center center;
+        background-size: cover;
+        color: white; /* Tekst boja */
+        background-color: #007bff; /* Plava boja za pozadinu */
+    }
+    .hero-button {
+        transition: all 0.3s ease-in-out;
+    }
+    .hero-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<!-- Hero sekcija sa pozadinom -->
+<div class="container mt-5 text-center">
+    <div class="jumbotron hero-background text-white rounded shadow-sm p-5">
+        <img src="/images/hrm-logo.webp" alt="HRM Logo" width="120" class="mb-4"> <!-- Logotip -->
+        <h1 class="display-4">Welcome to HRM System</h1>
+        <p class="lead mt-3">Streamline your hiring process and manage resources with ease. Sign up today!</p>
+        <div class="mt-4">
+            <!-- Login dugme sa ikonom -->
+            <a href="/api/auth/login" class="btn btn-light btn-lg hero-button me-3">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Login
+            </a>
+            
+            <!-- Register dugme sa ikonom -->
+            <a href="/api/auth/register" class="btn btn-secondary btn-lg hero-button">
+                <i class="bi bi-person-plus me-2"></i> Register
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Sekcija funkcionalnosti (tri kartice) -->
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Key Features</h2>
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-person-fill display-4 mb-3"></i>
+                    <h5 class="card-title">Manage Employees</h5>
+                    <p class="card-text">Track and manage all employee data in one place.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-envelope-fill display-4 mb-3"></i>
+                    <h5 class="card-title">Automated Notifications</h5>
+                    <p class="card-text">Send job application updates and interview invitations automatically.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <i class="bi bi-bar-chart-line-fill display-4 mb-3"></i>
+                    <h5 the class="card-title">Track Hiring Progress</h5>
+                    <p class="card-text">Monitor and analyze hiring stages effortlessly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer'); %>

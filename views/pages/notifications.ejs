@@ -1,0 +1,149 @@
+<%- include('../partials/header', { title: 'Notifications' }); %>
+
+<style>
+    .list-group-item {
+        word-wrap: break-word; /* Omogućava prelamanje riječi */
+        white-space: normal; /* Sprečava horizontalno scrollanje zbog dugog teksta */
+    }
+
+    .form-control {
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    @media (max-width: 768px) {
+        .list-group-item {
+            font-size: 14px; /* Smanjuje veličinu fonta za manje ekrane */
+            padding: 10px;
+        }
+
+        .form-control {
+            font-size: 14px;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Notifications</h1>
+
+    <% if (role === 'user') { %>
+        <% if (manualNotifications.length > 0) { %>
+            <h4>Manual Notifications</h4>
+            <ul class="list-group mb-4">
+                <% manualNotifications.forEach(notification => { %>
+                    <li class="list-group-item">
+                        <strong><%= notification.type %>:</strong> <%= notification.message %>
+                        <br>
+                        <small>Received on: <%= new Date(notification.created_at).toLocaleString() %></small>
+                    </li>
+                <% }) %>
+            </ul>
+        <% } else { %>
+            <p class="text-center">No manual notifications.</p>
+        <% } %>
+    <% } %>
+
+    <% if (role === 'admin' || role === 'super_admin') { %>
+        <h4>Send Manual Notification</h4>
+        <form id="manualNotificationForm">
+            <div class="form-group">
+                <label for="recipient_id">Recipient ID</label>
+                <input type="number" class="form-control" id="recipient_id" name="recipient_id" required>
+            </div>
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="type">Type</label>
+                <select class="form-control" id="type" name="type" required>
+                    <option value="invited for interview">Invitation for Interview</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="applied for job">Applied for Job</option>
+                </select>                
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Send Notification</button>
+        </form>
+        <h4 class="mt-4">Sent Notifications</h4>
+            <div id="sentNotificationsContainer" class="mt-3">
+                <p>Loading sent notifications...</p>
+            </div>
+    <% } %>
+</div>
+
+<script>
+    document.getElementById('manualNotificationForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const recipientId = document.getElementById('recipient_id').value;
+    const message = document.getElementById('message').value;
+    const type = document.getElementById('type').value;
+
+    console.log('Podaci za slanje:', { recipient_id: recipientId, message, type }); // Log podataka
+
+    try {
+        const response = await fetch('/api/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipient_id: recipientId, message, type }),
+        });
+
+        console.log('Response status:', response.status); // Log status odgovora
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Response data:', data); // Log podataka iz odgovora
+            alert('Notification sent successfully!');
+            document.getElementById('manualNotificationForm').reset();
+        } else {
+            const errorData = await response.json();
+            console.error('Error data:', errorData); // Log greške iz odgovora
+            alert('Error sending notification: ' + (errorData.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Fetch error:', err); // Log fetch greške
+        alert('Error sending notification.');
+    }
+});
+
+// Dohvaćanje i prikaz poslanih notifikacija
+document.addEventListener('DOMContentLoaded', async () => {
+    const sentNotificationsContainer = document.getElementById('sentNotificationsContainer');
+
+    try {
+        const response = await fetch('/api/notifications/sent', { method: 'GET' });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (data.sentNotifications.length > 0) {
+                sentNotificationsContainer.innerHTML = `
+                    <ul class="list-group">
+                        ${data.sentNotifications.map(notification => `
+                            <li class="list-group-item">
+                                <strong>To:</strong> ${notification.recipient_first_name} ${notification.recipient_last_name}
+                                <br>
+                                <strong>Message:</strong> ${notification.message}
+                                <br>
+                                <small>Type: ${notification.type}</small>
+                                <br>
+                                <small>Sent on: ${new Date(notification.created_at).toLocaleString()}</small>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+            } else {
+                sentNotificationsContainer.innerHTML = '<p>No notifications sent yet.</p>';
+            }
+        } else {
+            sentNotificationsContainer.innerHTML = '<p>Error fetching sent notifications.</p>';
+        }
+    } catch (err) {
+        console.error('Error fetching sent notifications:', err);
+        sentNotificationsContainer.innerHTML = '<p>Error fetching sent notifications.</p>';
+    }
+});
+</script>
+
+<%- include('../partials/footer'); %>

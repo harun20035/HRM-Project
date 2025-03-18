@@ -1,0 +1,169 @@
+<%- include('../partials/header', { title: 'Comments' }); %>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Comments</h1>
+
+    <% if (comments.length > 0) { %>
+        <ul class="list-group" id="commentsList">
+            <% comments.forEach(comment => { %>
+                <li class="list-group-item py-3" id="comment-<%= comment.id %>">
+                    <strong><%= comment.admin_first_name %> <%= comment.admin_last_name %>:</strong>
+                    <span class="comment-text"><%= comment.comment %></span>
+                    <input type="text" class="form-control edit-input d-none mt-2" value="<%= comment.comment %>">
+                    <br>
+                    <small>
+                        Job: <%= comment.job_title %> | Candidate: <%= comment.candidate_first_name %> <%= comment.candidate_last_name %>
+                        <br>
+                        Application Date: <%= new Date(comment.application_date).toLocaleDateString() %>
+                    </small>
+                    <div class="float-right mt-2">
+                        <% if (role === 'super_admin' || comment.admin_id === user.userId) { %>
+                            <button class="btn btn-warning btn-sm edit-btn">Edit</button>
+                            <button class="btn btn-success btn-sm save-btn d-none">Save</button>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="<%= comment.id %>">Delete</button>
+                        <% } %>
+                    </div>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p class="text-center">No comments available.</p>
+    <% } %>
+
+    <% if (role === 'super_admin' || role === 'admin') { %>
+        <h4 class="mt-4">Add a New Comment</h4>
+        <form id="addCommentForm">
+            <div class="form-group">
+                <label for="application_id">Application ID</label>
+                <input type="text" class="form-control" id="application_id" name="application_id" required>
+            </div>
+            <div class="form-group">
+                <label for="comment">Comment</label>
+                <textarea class="form-control" id="comment" name="comment" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Comment</button>
+        </form>
+    <% } %>
+</div>
+
+<style>
+    .list-group-item {
+        margin-bottom: 15px; /* Dodavanje razmaka između elemenata */
+        border-radius: 8px; /* Zaobljeni rubovi */
+        background-color: #f9f9f9; /* Svijetla pozadina za bolju preglednost */
+    }
+
+    .list-group-item small {
+        display: block;
+        margin-top: 10px;
+        color: #6c757d; /* Neutralna boja za dodatne informacije */
+    }
+
+    .edit-input {
+        margin-top: 10px;
+    }
+
+    .btn {
+        margin-left: 5px; /* Razmak između dugmadi */
+    }
+
+    #addCommentForm button {
+        margin-top: 20px;
+    }
+</style>
+
+<script>
+    // Dodavanje komentara
+    document.getElementById('addCommentForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const application_id = document.getElementById('application_id').value;
+        const comment = document.getElementById('comment').value;
+
+        fetch('/api/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ application_id, comment })
+        })
+            .then(response => response.json())
+            .then(data => {
+                const newComment = `
+                    <li class="list-group-item py-3" id="comment-${data.id}">
+                        <strong>${data.admin_first_name} ${data.admin_last_name}:</strong>
+                        <span class="comment-text">${data.comment}</span>
+                        <input type="text" class="form-control edit-input d-none mt-2" value="${data.comment}">
+                        <br>
+                        <small>
+                            Job: ${data.job_title} | Candidate: ${data.candidate_first_name} ${data.candidate_last_name}
+                            <br>
+                            Application Date: ${new Date(data.application_date).toLocaleDateString()}
+                        </small>
+                        <div class="float-right mt-2">
+                            <button class="btn btn-warning btn-sm edit-btn">Edit</button>
+                            <button class="btn btn-success btn-sm save-btn d-none">Save</button>
+                            <button class="btn btn-danger btn-sm delete-btn" data-id="${data.id}">Delete</button>
+                        </div>
+                    </li>
+                `;
+                document.getElementById('commentsList').insertAdjacentHTML('beforeend', newComment);
+                document.getElementById('addCommentForm').reset();
+            })
+            .catch(err => console.error(err));
+    });
+
+    // Brisanje komentara
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const id = this.dataset.id;
+
+            fetch(`/api/comments/${id}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById(`comment-${id}`).remove();
+                })
+                .catch(err => console.error(err));
+        });
+    });
+
+    // Uređivanje komentara
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const listItem = this.closest('.list-group-item');
+            const commentText = listItem.querySelector('.comment-text');
+            const editInput = listItem.querySelector('.edit-input');
+            const saveBtn = listItem.querySelector('.save-btn');
+
+            commentText.classList.add('d-none');
+            editInput.classList.remove('d-none');
+            this.classList.add('d-none');
+            saveBtn.classList.remove('d-none');
+        });
+    });
+
+    // Spremanje izmjena komentara
+    document.querySelectorAll('.save-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const listItem = this.closest('.list-group-item');
+            const commentText = listItem.querySelector('.comment-text');
+            const editInput = listItem.querySelector('.edit-input');
+            const editBtn = listItem.querySelector('.edit-btn');
+            const id = listItem.id.split('-')[1];
+
+            fetch(`/api/comments/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ comment: editInput.value })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    commentText.textContent = editInput.value;
+                    commentText.classList.remove('d-none');
+                    editInput.classList.add('d-none');
+                    this.classList.add('d-none');
+                    editBtn.classList.remove('d-none');
+                })
+                .catch(err => console.error(err));
+        });
+    });
+</script>
+
+<%- include('../partials/footer'); %>

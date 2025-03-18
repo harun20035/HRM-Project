@@ -1,0 +1,305 @@
+<%- include('../partials/header', { title: 'Manage Jobs' }); %>
+
+<style>
+    .table td {
+        word-wrap: break-word;
+        white-space: normal;
+        vertical-align: top;
+        padding: 10px;
+    }
+
+    .table td, .table th {
+        height: auto;
+        vertical-align: top;
+    }
+
+    .table td {
+        max-width: 250px;
+        overflow-wrap: break-word;
+    }
+
+    /* Dodavanje razmaka između dugmadi */
+    .btn-sm {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+
+    /* Responzivnost tabele */
+    @media (max-width: 600px) {
+        .table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center">Manage Jobs</h1>
+
+    <% if (role === 'super_admin' || role === 'admin') { %>
+        <h4 class="mt-4">Create New Job</h4>
+        <form id="createJobForm">
+            <div class="mb-3">
+                <label for="title" class="form-label">Job Title</label>
+                <input type="text" class="form-control" id="title" name="title" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="requirements" class="form-label">Requirements</label>
+                <textarea class="form-control" id="requirements" name="requirements" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="deadline" class="form-label">Application Deadline</label>
+                <input type="date" class="form-control" id="deadline" name="deadline" required>
+            </div>
+            <div class="mb-3">
+                <label for="required_fields" class="form-label">Required Fields</label>
+                <div>
+                    <input type="checkbox" id="cv" name="required_fields" value="cv">
+                    <label for="cv">CV</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="cover_letter" name="required_fields" value="cover_letter">
+                    <label for="cover_letter">Motivational Letter</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="certificates" name="required_fields" value="certificates">
+                    <label for="certificates">Certificates</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Create Job</button>
+        </form>
+    <% } %>
+
+    <h4 class="mt-5">Existing Jobs</h4>
+
+    <div class="mb-3">
+        <label for="statusFilter" class="form-label">Filter by Status</label>
+        <select class="form-select" id="statusFilter">
+            <option value="all">All Jobs</option>
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+        </select>
+        <label for="searchJob" class="form-label">Search by Title</label>
+        <input type="text" id="searchJob" class="form-control" placeholder="Search by job title">
+    </div>
+
+    <% if (jobs.length > 0) { %>
+        <table class="table table-striped mt-3">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Requirements</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Required Fields</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="jobsTableBody">
+                <% jobs.forEach(job => { %>
+                    <tr id="job-<%= job.job_id %>" class="<%= job.status %>">
+                        <td><%= job.job_id %></td>
+                        <td><%= job.title %></td>
+                        <td><%= job.description %></td>
+                        <td><%= job.requirements %></td>
+                        <td><%= job.deadline %></td>
+                        <td><%= job.status %></td>
+                        <td>
+                            <% if (job.required_fields) { %>
+                                <%= job.required_fields ? job.required_fields.split(',').join(", ") : 'None' %>
+                            <% } else { %>
+                                None
+                            <% } %>
+                        </td>                        
+                        <td>
+                            <% if (role === 'user' && job.status === 'active') { %>
+                                <% const userApplication = applications.find(app => app.job_id === job.job_id); %>
+                                <% if (userApplication) { %>
+                                    <% if (userApplication.status === 'accepted') { %>
+                                        <span class="text-success">Accepted</span>
+                                    <% } else { %>
+                                        <button class="btn btn-danger btn-sm cancel-application-btn" data-job-id="<%= job.job_id %>">Cancel</button>
+                                    <% } %>
+                                <% } else { %>
+                                    <button class="btn btn-success btn-sm apply-job-btn" data-job-id="<%= job.job_id %>">Apply</button>
+                                <% } %>
+                            <% } %>                            
+                            <% if (role === 'super_admin' || role === 'admin') { %>
+                                <button class="btn btn-danger btn-sm delete-job-btn" data-job-id="<%= job.job_id %>">Delete</button>
+                                <% if (job.status === 'active') { %>
+                                    <button class="btn btn-warning btn-sm archive-job-btn" data-job-id="<%= job.job_id %>">Archive</button>
+                                <% } %>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    <% } else { %>
+        <p class="text-center">No jobs available.</p>
+    <% } %>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // AJAX za kreiranje posla
+    $('#createJobForm').on('submit', function (e) {
+    e.preventDefault();
+    const title = $('#title').val();
+    const description = $('#description').val();
+    const requirements = $('#requirements').val();
+    const deadline = $('#deadline').val();
+
+    // Prikupljanje vrijednosti iz checkboxova
+    const requiredFields = [];
+    $('input[name="required_fields"]:checked').each(function () {
+        requiredFields.push($(this).val());
+    });
+
+    $.ajax({
+        url: '/api/jobs',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ title, description, requirements, deadline, required_fields: requiredFields }),
+        success: function (data) {
+            const newJobRow = `
+                <tr id="job-${data.job_id}" class="${data.status}">
+                    <td>${data.job_id}</td>
+                    <td>${data.title}</td>
+                    <td>${data.description}</td>
+                    <td>${data.requirements}</td>
+                    <td>${data.deadline}</td>
+                    <td>${data.status}</td>
+                    <td>${data.required_fields ? data.required_fields.split(',').join(", ") : 'None'}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm delete-job-btn" data-job-id="${data.job_id}">Delete</button>
+                        <button class="btn btn-warning btn-sm archive-job-btn" data-job-id="${data.job_id}">Archive</button>
+                    </td>
+                </tr>
+            `;
+            $('#jobsTableBody').prepend(newJobRow);
+            $('#createJobForm')[0].reset();
+        },
+        error: function () {
+            alert('Error creating job');
+        },
+    });
+});
+
+
+    // AJAX za prijavu na posao
+    $(document).on('click', '.apply-job-btn', function () {
+    const jobId = $(this).data('job-id');
+
+    $.ajax({
+        url: `/api/jobs/${jobId}/apply`,
+        method: 'POST',
+        success: function (response) {
+            if (response.redirect) {
+                console.log('Redirecting to:', response.redirect);
+                window.location.href = response.redirect;
+            } else {
+                alert(response.message);
+                location.reload();
+            }
+        },
+        error: function (xhr) {
+            if (xhr.status === 400) {
+                alert(xhr.responseJSON.error);
+            } else {
+                alert('Error applying for job.');
+            }
+        },
+    });
+});
+
+
+
+    // AJAX za otkazivanje prijave
+    $(document).on('click', '.cancel-application-btn', function () {
+        const jobId = $(this).data('job-id');
+
+        $.ajax({
+            url: `/api/jobs/${jobId}/cancel`,
+            method: 'DELETE',
+            success: function () {
+                alert('Application canceled successfully!');
+                $(`#job-${jobId}`).find('.cancel-application-btn')
+                    .removeClass('btn-danger cancel-application-btn')
+                    .addClass('btn-success apply-job-btn')
+                    .text('Apply');
+            },
+            error: function () {
+                alert('Error canceling application.');
+            },
+        });
+    });
+
+    // AJAX za brisanje posla
+    // AJAX za brisanje posla
+    $(document).on('click', '.delete-job-btn', function () {
+        const jobId = $(this).data('job-id');
+
+        $.ajax({
+            url: `/api/jobs/${jobId}`,
+            method: 'DELETE',
+            success: function () {
+                $(`#job-${jobId}`).remove();
+            },
+            error: function () {
+                alert('Error deleting job');
+            },
+        });
+    });
+
+    // AJAX za arhiviranje posla
+    $(document).on('click', '.archive-job-btn', function () {
+        const jobId = $(this).data('job-id');
+
+        $.ajax({
+            url: `/api/jobs/${jobId}/archive`,
+            method: 'PATCH',
+            success: function () {
+                $(`#job-${jobId}`).find('td:nth-child(6)').text('archived');
+                $(this).remove();
+            },
+            error: function () {
+                alert('Error archiving job');
+            },
+        });
+    });
+
+    // Filtriranje i pretraga
+    $('#statusFilter').on('change', function() {
+        const status = $(this).val();
+        $('#jobsTableBody tr').each(function() {
+            const jobStatus = $(this).find('td:nth-child(6)').text().toLowerCase();
+            if (status === 'all' || jobStatus === status) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    $('#searchJob').on('keyup', function() {
+        const searchText = $(this).val().toLowerCase();
+        $('#jobsTableBody tr').each(function() {
+            const jobTitle = $(this).find('td:nth-child(2)').text().toLowerCase();
+            if (jobTitle.includes(searchText)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+</script>
+
+<%- include('../partials/footer'); %>

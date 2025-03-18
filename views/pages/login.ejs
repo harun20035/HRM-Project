@@ -1,0 +1,100 @@
+<%- include('../partials/header', { title: 'Login' }); %>
+
+<style>
+    .login-form {
+        width: 100%;
+        max-width: 400px;
+        padding: 15px;
+        margin: auto;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-form .form-control {
+        height: auto;
+        padding: 10px;
+    }
+
+    .login-form .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .login-form .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+    }
+
+    .login-form .form-label {
+        margin-bottom: 5px;
+    }
+
+    .google-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #db4437;
+        color: #fff;
+        border: none;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 10px;
+        width: 100%;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .google-btn:hover {
+        background-color: #c23321;
+        text-decoration: none;
+    }
+
+    .google-btn img {
+        height: 20px;
+        margin-right: 10px;
+    }
+
+    .google-btn span {
+        text-align: center;
+    }
+</style>
+
+<h2 class="text-center">Login</h2>
+
+<!-- Prostor za prikaz poruke -->
+<% if (error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+
+<form action="/api/auth/login" method="POST" class="login-form">
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Login</button>
+
+    <!-- Separator with "or" -->
+    <div class="text-center my-3">
+        <span style="position: relative; padding: 0 10px; background: #f8f9fa; z-index: 1;">or</span>
+        <hr style="margin: -10px auto 10px; border-top: 1px solid #ccc; z-index: 0;">
+    </div>
+
+    <!-- Google Login Button -->
+    <a href="/api/auth/oauth" class="google-btn">
+        <img src="/images/google.png" alt="Google Logo">
+        <span>Continue with Google</span>
+    </a>
+</form>
+
+<%- include('../partials/footer'); %>

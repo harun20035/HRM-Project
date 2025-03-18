@@ -1,0 +1,42 @@
+<%- include('../partials/header', { title: 'My Profile' }); %>
+
+<div class="container mt-5">
+    <h1 class="text-center">Welcome, <%= user.first_name %>!</h1>
+
+    <form action="/api/profile/edit" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="first_name" name="first_name" value="<%= user.first_name %>" required>
+        </div>
+        <div class="mb-3">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="last_name" name="last_name" value="<%= user.last_name %>" required>
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="<%= user.email %>" required>
+        </div>
+        <div class="mb-3">
+            <label for="experience" class="form-label">Experience</label>
+            <textarea class="form-control" id="experience" name="experience" rows="3"><%= user.experience %></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="education" class="form-label">Education</label>
+            <textarea class="form-control" id="education" name="education" rows="3"><%= user.education %></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="skills" class="form-label">Skills</label>
+            <textarea class="form-control" id="skills" name="skills" rows="3"><%= user.skills %></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="cv" class="form-label">Upload CV</label>
+            <input type="file" class="form-control" id="cv" name="cv">
+            <% if (user.cv) { %>
+                <p class="mt-2">Current CV: <a href="/<%= user.cv %>" target="_blank">View CV</a></p>
+            <% } %>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Update Profile</button>
+    </form>
+</div>
+
+<%- include('../partials/footer'); %>

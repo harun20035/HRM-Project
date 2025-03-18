@@ -1,0 +1,207 @@
+<%- include('../partials/header', { title: 'Applications Status' }); %>
+
+<style>
+    /* Stilovi za prelamanje riječi u tabeli */
+    .wrap-cell {
+        word-wrap: break-word;
+        word-break: keep-all; /* Omogućava prelamanje riječi na bilo kojem mestu */
+        max-width: 200px; /* Ograničava širinu ćelije */
+        white-space: normal; /* Omogućava prelamanje teksta na novi red */
+        hyphens: auto;
+    }
+
+    @media (max-width: 768px) {
+        .table-responsive-sm {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .btn-sm {
+            margin-top: 5px;
+            margin-right: 5px;
+            width: 100%;
+        }
+        .table td, .table th {
+            white-space: normal;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Applications Status</h1>
+
+    <!-- Tabela za aplikacije sa statusom invited_for_interview -->
+    <h3>Invited for Interview</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Candidate Name</th>
+                <th>Job Title</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% invitedApplications.forEach((app, index) => { %>
+                <tr>
+                    <td><%= index + 1 %></td>
+                    <td class="wrap-cell"><%= app.first_name %> <%= app.last_name %></td>
+                    <td class="wrap-cell"><%= app.job_title %></td>
+                    <td><%= app.status %></td>
+                    <td>
+                        <button class="btn btn-success btn-sm accept-btn" data-id="<%= app.application_id %>">Accept</button>
+                        <button class="btn btn-danger btn-sm reject-btn" data-id="<%= app.application_id %>">Reject</button>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <!-- Tabela za aplikacije sa statusom accepted ili rejected -->
+    <h3>Finalized Applications</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Candidate Name</th>
+                <th>Job Title</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% finalApplications.forEach((app, index) => { %>
+                <tr>
+                    <td><%= index + 1 %></td>
+                    <td class="wrap-cell"><%= app.first_name %> <%= app.last_name %></td>
+                    <td class="wrap-cell"><%= app.job_title %></td>
+                    <td><%= app.status %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleLoading(show) {
+    if (show) {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.setAttribute('id', 'loadingDiv');
+        loadingDiv.style.position = 'fixed';
+        loadingDiv.style.top = '0';
+        loadingDiv.style.left = '0';
+        loadingDiv.style.width = '100%';
+        loadingDiv.style.height = '100%';
+        loadingDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        loadingDiv.style.display = 'flex';
+        loadingDiv.style.justifyContent = 'center';
+        loadingDiv.style.alignItems = 'center';
+        loadingDiv.style.zIndex = '1000';
+        loadingDiv.innerHTML = `
+            <div style="text-align: center;">
+                <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+                <p style="color: white; font-size: 20px; margin-top: 15px;">Managing your request... Please wait</p>
+            </div>
+        `;
+        document.body.appendChild(loadingDiv);
+        
+        // Dodavanje stilova za loader
+        const loader = document.createElement('style');
+        loader.innerHTML = `
+            .lds-ellipsis {
+                display: inline-block;
+                position: relative;
+                width: 80px;
+                height: 80px;
+            }
+            .lds-ellipsis div {
+                position: absolute;
+                top: 33px;
+                width: 13px;
+                height: 13px;
+                border-radius: 50%;
+                background: #fff;
+                animation-timing-function: cubic-bezier(0, 1, 1, 0);
+            }
+            .lds-ellipsis div:nth-child(1) {
+                left: 8px;
+                animation: lds-ellipsis1 0.6s infinite;
+            }
+            .lds-ellipsis div:nth-child(2) {
+                left: 8px;
+                animation: lds-ellipsis2 0.6s infinite;
+            }
+            .lds-ellipsis div:nth-child(3) {
+                left: 32px;
+                animation: lds-ellipsis2 0.6s infinite;
+            }
+            .lds-ellipsis div:nth-child(4) {
+                left: 56px;
+                animation: lds-ellipsis3 0.6s infinite;
+            }
+            @keyframes lds-ellipsis1 {
+                0% {
+                    transform: scale(0);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            @keyframes lds-ellipsis3 {
+                0% {
+                    transform: scale(1);
+                }
+                100% {
+                    transform: scale(0);
+                }
+            }
+            @keyframes lds-ellipsis2 {
+                0% {
+                    transform: translate(0, 0);
+                }
+                100% {
+                    transform: translate(24px, 0);
+                }
+            }
+        `;
+        document.head.appendChild(loader);
+    } else {
+        const loadingDiv = document.getElementById('loadingDiv');
+        if (loadingDiv) {
+            loadingDiv.parentNode.removeChild(loadingDiv);
+        }
+        const styles = document.head.getElementsByTagName('style');
+        if (styles.length > 0) {
+            document.head.removeChild(styles[styles.length - 1]); // Uklanja dodati CSS za loader
+        }
+    }
+}
+
+document.querySelectorAll('.accept-btn, .reject-btn').forEach(button => {
+    button.addEventListener('click', function () {
+        const applicationId = this.dataset.id;
+        const status = this.classList.contains('accept-btn') ? 'accepted' : 'rejected';
+
+        toggleLoading(true, 'Updating application status...'); // Prikazivanje indikatora učitavanja
+
+        fetch(`/api/applicationsStatus/${applicationId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            toggleLoading(false);
+            location.reload(); 
+        })
+        .catch(err => {
+            console.error(err);
+            toggleLoading(false);
+        });
+    });
+});
+</script>
+
+<%- include('../partials/footer'); %>

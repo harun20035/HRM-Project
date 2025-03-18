@@ -1,0 +1,49 @@
+<%- include('../partials/header', { title: 'Complete Application' }); %>
+
+<div class="container mt-5">
+    <h1 class="text-center">Complete Application</h1>
+    <form id="completeApplicationForm" enctype="multipart/form-data" target="_blank">
+        <% if (requiredFields.includes('cover_letter')) { %>
+            <div class="mb-3">
+                <label for="cover_letter" class="form-label">Motivational Letter</label>
+                <textarea class="form-control" id="cover_letter" name="cover_letter" rows="3" required></textarea>
+            </div>
+        <% } %>
+        <% if (requiredFields.includes('certificates')) { %>
+            <div class="mb-3">
+                <label for="certificates" class="form-label">Certificates</label>
+                <input type="file" class="form-control" id="certificates" name="certificates" multiple>
+            </div>
+        <% } %>
+        <button type="submit" class="btn btn-primary w-100">Submit and Apply</button>
+    </form>     
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $('#completeApplicationForm').on('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        console.log('Form data being sent:', Array.from(formData.entries())); // Proveravamo podatke pre slanja
+
+        $.ajax({
+            url: window.location.pathname,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                console.log('Server response:', response); // Ovo se prikazuje ako server odgovori
+                $('#completeApplicationForm').remove();
+                $('body').append('<h3 class="text-success text-center mt-5">Successfully applied for the job!</h3>');
+            },
+            error: function (xhr) {
+                console.log('Error response:', xhr.responseJSON || xhr.responseText); // Ako je greška u serveru
+                alert(xhr.responseJSON?.error || 'Error submitting application.');
+            },
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            console.error('AJAX request failed:', textStatus, errorThrown); // Ako AJAX poziv uopšte ne uspe
+        });
+    });
+</script>
