@@ -2,7 +2,7 @@
 This is a web app designed to simplify the recruitment and candidate selection process, aswell as manage internal employee data efficiently. This application enables efficient management of job postings, candidate screening, ranking, and communication with applicants throughout the selection process.
 The system provides different functionalities for administrators (HR managers) and candidates (regular users), ensuring a simple and transparent application process.
 ## Installation
-- Before u start, u will need Node.js (v22.11.0) and PostgreSQL Server installed on your PC.
+- Before u start, u will need Node.js (v22.11.0), npm, and PostgreSQL Server installed on your PC.
 - git clone https://github.com/harun20035/HRM-Project.git
 - cd HRM-Project
 - npm install
