@@ -6,7 +6,7 @@ The system provides different functionalities for administrators (HR managers) a
 - git clone https://github.com/harun20035/HRM-Project.git
 - cd HRM-Project
 - npm install
-- Make a database (hrm_system), and then make a database structure with this command: psql -U postgres -d hrm_system -f hrm_system.sql (or full path to this file)
+- Make a database (hrm_system), and then make a database structure with this command: psql -U postgres -d hrm_system -f hrm_system.sql (u will need to be in the same directory as file hrm_system.sql)
 ## Setup and Start
 - You will need to make your .env file with your information (check the .env.example file)
 - After you complete and install everything, you should be able to start a project with this command: node server.js
